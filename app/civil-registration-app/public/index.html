@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Civil Registration — Death Entry</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --card: #ffffff;
+    --text: #1a2433;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --accent: #1d4ed8;
+    --ok: #15803d;
+    --ok-bg: #dcfce7;
+    --err: #b91c1c;
+    --err-bg: #fee2e2;
+    --note-bg: #fffbeb;
+    --note-border: #fde68a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 24px 32px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { margin: 0 0 4px; font-size: 1.4rem; }
+  header p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+  main { padding: 24px 32px; max-width: 720px; margin: 0 auto; display: grid; gap: 24px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; }
+  .card h2 { margin: 0 0 16px; font-size: 1.05rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+  input, select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.92rem;
+    background: #fff;
+  }
+  .note {
+    background: var(--note-bg);
+    border: 1px solid var(--note-border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: #92400e;
+    margin-bottom: 16px;
+  }
+  button {
+    margin-top: 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    border: 1px solid var(--border);
+  }
+  .step.ok { background: var(--ok-bg); border-color: #bbf7d0; }
+  .step.fail { background: var(--err-bg); border-color: #fecaca; }
+  .step .badge { font-weight: 700; }
+  .step.ok .badge { color: var(--ok); }
+  .step.fail .badge { color: var(--err); }
+  .step pre {
+    margin: 4px 0 0;
+    font-size: 0.78rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: var(--muted);
+  }
+  .cases { display: grid; gap: 12px; }
+  .case-row {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 0.85rem;
+  }
+  .case-row .name { font-weight: 600; }
+  .case-row .meta { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Civil Registration — Death Entry</h1>
+  <p>Register a confirmed death and notify the deceased's bank via the real Death Registration &amp; Death Notification Services.</p>
+</header>
+<main>
+  <div class="card">
+    <h2>New death registration</h2>
+    <div class="note">
+      NIC, address, and date of birth are kept for this office's local records only — the national Death Registration Services API has no such fields, so they are not transmitted.
+    </div>
+    <form id="death-form">
+      <div class="grid">
+        <div class="full">
+          <label for="fullName">Full name *</label>
+          <input id="fullName" name="fullName" required placeholder="John Silva">
+        </div>
+        <div>
+          <label for="nic">NIC (local record only)</label>
+          <input id="nic" name="nic" placeholder="199012345678">
+        </div>
+        <div>
+          <label for="dateOfBirth">Date of birth (local record only)</label>
+          <input id="dateOfBirth" name="dateOfBirth" type="date">
+        </div>
+        <div class="full">
+          <label for="address">Address (local record only)</label>
+          <input id="address" name="address" placeholder="12 Lake Road, Colombo">
+        </div>
+        <div>
+          <label for="sludi">SLUDI</label>
+          <input id="sludi" name="sludi" placeholder="SLU123456">
+        </div>
+        <div>
+          <label for="personType">Person type *</label>
+          <select id="personType" name="personType">
+            <option value="Adult">Adult</option>
+            <option value="Minor">Minor</option>
+            <option value="Newborn">Newborn</option>
+          </select>
+        </div>
+        <div>
+          <label for="dateOfDeath">Date of death *</label>
+          <input id="dateOfDeath" name="dateOfDeath" type="date" required>
+        </div>
+        <div>
+          <label for="timeOfDeath">Time of death</label>
+          <input id="timeOfDeath" name="timeOfDeath" type="time">
+        </div>
+        <div class="full">
+          <label for="placeOfDeath">Place of death *</label>
+          <input id="placeOfDeath" name="placeOfDeath" required placeholder="National Hospital Colombo">
+        </div>
+        <div>
+          <label for="district">District *</label>
+          <input id="district" name="district" required placeholder="Colombo">
+        </div>
+        <div>
+          <label for="division">Division *</label>
+          <input id="division" name="division" required placeholder="Colombo">
+        </div>
+        <div>
+          <label for="deathNature">Death nature *</label>
+          <select id="deathNature" name="deathNature">
+            <option value="Natural">Natural</option>
+            <option value="Sudden">Sudden</option>
+            <option value="Suspicious">Suspicious</option>
+          </select>
+        </div>
+        <div>
+          <label for="causeOfDeath">Cause of death</label>
+          <input id="causeOfDeath" name="causeOfDeath" placeholder="Heart Failure">
+        </div>
+        <div class="full">
+          <label for="reportedBy">Reported by (officer ID) *</label>
+          <input id="reportedBy" name="reportedBy" required placeholder="MO123">
+        </div>
+      </div>
+      <button type="submit" id="submit-btn">Register &amp; Notify Bank</button>
+    </form>
+  </div>
+
+  <div class="card" id="status-card" style="display:none;">
+    <h2>Status trail</h2>
+    <ul class="steps" id="steps"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Registered deaths (this session)</h2>
+    <div class="cases" id="cases"><p style="color:var(--muted); font-size:0.85rem;">No cases submitted yet.</p></div>
+  </div>
+</main>
+
+<script>
+  const form = document.getElementById('death-form');
+  const submitBtn = document.getElementById('submit-btn');
+  const statusCard = document.getElementById('status-card');
+  const stepsEl = document.getElementById('steps');
+  const casesEl = document.getElementById('cases');
+
+  function renderSteps(steps) {
+    stepsEl.innerHTML = '';
+    for (const step of steps) {
+      const li = document.createElement('li');
+      li.className = 'step ' + (step.ok ? 'ok' : 'fail');
+      li.innerHTML = `
+        <div>
+          <span class="badge">${step.ok ? '✓' : '✗'} ${step.name}</span>
+          <pre>${escapeHtml(JSON.stringify(step.detail, null, 2))}</pre>
+        </div>
+      `;
+      stepsEl.appendChild(li);
+    }
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  }
+
+  async function loadCases() {
+    const res = await fetch('/cases');
+    const cases = await res.json();
+    if (cases.length === 0) return;
+    casesEl.innerHTML = '';
+    for (const c of cases) {
+      const div = document.createElement('div');
+      div.className = 'case-row';
+      div.innerHTML = `
+        <div class="name">${escapeHtml(c.form.fullName || '')} ${c.deathRegistrationId ? `— ${c.deathRegistrationId}` : ''}</div>
+        <div class="meta">NIC: ${escapeHtml(c.form.nic || '—')} · Address: ${escapeHtml(c.form.address || '—')} · Status: ${c.status || 'pending'}${c.certificateReferenceNo ? ' · Cert: ' + c.certificateReferenceNo : ''}</div>
+      `;
+      casesEl.appendChild(div);
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+    statusCard.style.display = 'block';
+    stepsEl.innerHTML = '<li class="step">Submitting…</li>';
+
+    const data = Object.fromEntries(new FormData(form).entries());
+
+    try {
+      const res = await fetch('/register-death', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      renderSteps(result.steps || []);
+      await loadCases();
+    } catch (err) {
+      stepsEl.innerHTML = `<li class="step fail"><span class="badge">✗ Request failed</span><pre>${escapeHtml(err.message)}</pre></li>`;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Register & Notify Bank';
+    }
+  });
+
+  loadCases();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+[
+  { "accountId": "ACC-00123", "sludi": "SLU123456", "name": "John Silva", "balance": 154320.5, "status": "ACTIVE" },
+  { "accountId": "ACC-00124", "sludi": "SLU223456789", "name": "Kamala Perera", "balance": 8250, "status": "ACTIVE" },
+  { "accountId": "ACC-00125", "sludi": "SLU323456789", "name": "Ruwan Fernando", "balance": 500, "status": "ACTIVE" },
+  { "accountId": "ACC-00126", "sludi": "SLU423456789", "name": "Anusha Jayasuriya", "balance": 92100.75, "status": "ACTIVE" }
+]

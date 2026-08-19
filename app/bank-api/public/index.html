@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Smart Citizen Bank — Account Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --card: #ffffff;
+    --text: #1a2433;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --active: #15803d;
+    --active-bg: #dcfce7;
+    --hold: #b91c1c;
+    --hold-bg: #fee2e2;
+    --accent: #1d4ed8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 24px 32px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { margin: 0 0 4px; font-size: 1.4rem; }
+  header p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+  main { padding: 24px 32px; max-width: 960px; margin: 0 auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  th, td {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.92rem;
+  }
+  th { background: #f8fafc; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .status.ACTIVE { background: var(--active-bg); color: var(--active); }
+  .status.ON_HOLD { background: var(--hold-bg); color: var(--hold); }
+  .meta { color: var(--muted); font-size: 0.85rem; margin-top: 24px; }
+  .refresh-note { font-size: 0.8rem; color: var(--muted); margin-top: 8px; }
+  tr.flash { animation: flash 1.4s ease-out; }
+  @keyframes flash {
+    0% { background: #fef9c3; }
+    100% { background: transparent; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Smart Citizen Bank — Account Dashboard</h1>
+  <p>Mock bank system. Receives confirmed-death notifications from Civil Registration and places matching accounts on hold.</p>
+</header>
+<main>
+  <table>
+    <thead>
+      <tr>
+        <th>Account ID</th>
+        <th>Customer</th>
+        <th>SLUDI</th>
+        <th>Balance (LKR)</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <p class="refresh-note">Auto-refreshes every 3 seconds.</p>
+  <p class="meta">API base: <code id="api-base"></code></p>
+</main>
+
+<script>
+  const API_BASE = window.location.origin;
+  document.getElementById('api-base').textContent = API_BASE;
+
+  let previousStatus = {};
+
+  async function refresh() {
+    try {
+      const res = await fetch(`${API_BASE}/accounts`);
+      const accounts = await res.json();
+      const rows = document.getElementById('rows');
+      rows.innerHTML = '';
+      for (const acc of accounts) {
+        const tr = document.createElement('tr');
+        if (previousStatus[acc.accountId] && previousStatus[acc.accountId] !== acc.status) {
+          tr.classList.add('flash');
+        }
+        previousStatus[acc.accountId] = acc.status;
+        tr.innerHTML = `
+          <td>${acc.accountId}</td>
+          <td>${acc.name}</td>
+          <td>${acc.sludi}</td>
+          <td>${Number(acc.balance).toLocaleString('en-LK', { minimumFractionDigits: 2 })}</td>
+          <td><span class="status ${acc.status}">${acc.status.replace('_', ' ')}</span></td>
+        `;
+        rows.appendChild(tr);
+      }
+    } catch (err) {
+      console.error('Failed to refresh accounts', err);
+    }
+  }
+
+  refresh();
+  setInterval(refresh, 3000);
+</script>
+</body>
+</html>
