@@ -66,7 +66,11 @@ function createCaseStore() {
     return Array.from(cases.values());
   }
 
-  return { createCase, getCase, updateHospitalDetails, finalizeCase, markRegistered, listCases };
+  function listPendingCasesBySludi(sludi) {
+    return Array.from(cases.values()).filter(c => c.sludi === sludi && c.status !== 'REGISTERED');
+  }
+
+  return { createCase, getCase, updateHospitalDetails, finalizeCase, markRegistered, listCases, listPendingCasesBySludi };
 }
 
 module.exports = { createCaseStore };

@@ -1,49 +1,76 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 
 const { createCaseStore } = require('./caseStore');
-const { lookupNic } = require('./nicLookup');
+const { lookupNic } = require('./nicClient');
 const { validateSludi } = require('./sludiMock');
+const { requestOtp, verifyOtp } = require('./otpMock');
 const { submitBirthRegistration } = require('./birthRegistrationMock');
 const { initiateCourierPayment } = require('./paymentsClient');
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const store = createCaseStore();
 
+app.post('/api/otp/request', (req, res) => {
+  const { sludi } = req.body;
+  if (!validateSludi(sludi)) {
+    return res.status(400).json({ error: 'A SLUDI value is required' });
+  }
+  const result = requestOtp(sludi);
+  res.json(result);
+});
+
+app.post('/api/otp/verify', (req, res) => {
+  const { otp } = req.body;
+  res.json({ valid: verifyOtp(otp) });
+});
+
 app.get('/api/cases', (req, res) => {
   res.json(store.listCases());
 });
 
-app.get('/api/nic/:nic', (req, res) => {
-  const result = lookupNic(req.params.nic);
-  if (!result.found) {
-    return res.status(404).json({ found: false });
-  }
-  res.json(result);
+app.get('/api/cases/pending/:sludi', (req, res) => {
+  res.json(store.listPendingCasesBySludi(req.params.sludi));
 });
 
-app.post('/api/pre-register', (req, res) => {
+app.get('/api/nic/:nic', async (req, res) => {
+  try {
+    const result = await lookupNic(req.params.nic);
+    if (!result.found) {
+      return res.status(404).json({ found: false });
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  }
+});
+
+app.post('/api/pre-register', async (req, res) => {
   const { sludi, motherNic, fatherNic } = req.body;
   if (!validateSludi(sludi)) {
     return res.status(400).json({ error: 'A SLUDI value is required' });
   }
-  const motherLookup = lookupNic(motherNic);
+  let motherLookup;
+  let fatherLookup;
+  try {
+    motherLookup = await lookupNic(motherNic);
+    fatherLookup = fatherNic ? await lookupNic(fatherNic) : null;
+  } catch (err) {
+    return res.status(502).json({ error: `NIC lookup failed: ${err.message}` });
+  }
   if (!motherLookup.found) {
-    return res.status(400).json({ error: `Mother NIC ${motherNic} not found (try 736604450V for the demo)` });
+    return res.status(400).json({ error: `Mother NIC ${motherNic} not found (try 736604450V, 845231907V, or 901245667V for the demo)` });
   }
-  let father = null;
-  if (fatherNic) {
-    const fatherLookup = lookupNic(fatherNic);
-    if (!fatherLookup.found) {
-      return res.status(400).json({ error: `Father NIC ${fatherNic} not found (try 882345671V for the demo)` });
-    }
-    father = fatherLookup.data;
+  if (fatherNic && !fatherLookup.found) {
+    return res.status(400).json({ error: `Father NIC ${fatherNic} not found (try 736604450V, 845231907V, or 901245667V for the demo)` });
   }
-  const record = store.createCase({ sludi, mother: motherLookup.data, father });
+  const record = store.createCase({ sludi, mother: motherLookup.data, father: fatherLookup?.data || null });
   res.json(record);
 });
 
@@ -96,5 +123,5 @@ app.post('/api/case/:reference/finalize', async (req, res) => {
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
-  console.log(`Birth Registration Platform listening on http://localhost:${PORT}`);
+  console.log(`Birth Registration Platform (Hospital Desk + API) listening on http://localhost:${PORT}`);
 });

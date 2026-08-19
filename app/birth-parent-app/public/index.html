@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Apply — Birth Registration Platform</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 700px; margin: 0 auto; padding: 24px; background: #f7f8fa; color: #1a1a2e; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.1rem; margin-top: 0; }
+  .panel { display: none; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
+  .panel.active { display: block; }
+  label { display: block; margin-top: 10px; font-size: 0.85rem; color: #444; }
+  input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; margin-top: 4px; box-sizing: border-box; }
+  button.primary { margin-top: 16px; background: #2b6cb0; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
+  button.primary:hover { background: #245a94; }
+  button.secondary { margin-top: 8px; background: #e4e6eb; color: #1a1a2e; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+  .badge { display: inline-block; font-size: 0.72rem; padding: 3px 8px; border-radius: 10px; margin-left: 6px; }
+  .badge.sim { background: #fff3cd; color: #7a5b00; }
+  .badge.real { background: #d4edda; color: #1e5c2a; }
+  .status-trail { margin-top: 16px; padding: 12px; background: #f0f4f8; border-radius: 8px; font-size: 0.9rem; }
+  .ref-box { font-size: 1.4rem; font-weight: bold; color: #2b6cb0; padding: 10px; background: #ebf3fc; border-radius: 8px; text-align: center; margin: 12px 0; }
+  .error { color: #c0392b; font-size: 0.85rem; margin-top: 8px; }
+  .note { font-size: 0.8rem; color: #666; margin-top: 4px; }
+  .otp-display { font-size: 1.6rem; letter-spacing: 4px; font-weight: bold; text-align: center; padding: 10px; background: #fff3cd; border-radius: 8px; margin: 10px 0; }
+  .person-card { background: #f0f4f8; border-radius: 8px; padding: 10px; margin-top: 6px; font-size: 0.85rem; }
+  .app-list { list-style: none; margin: 10px 0; padding: 0; }
+  .app-list li { display: flex; justify-content: space-between; align-items: center; background: #f0f4f8; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; cursor: pointer; }
+  .app-list li:hover { background: #e4ecf7; }
+  .app-list .ref { font-weight: 700; color: #17406e; }
+  .app-list .status-pill { font-size: 0.72rem; padding: 3px 8px; border-radius: 10px; background: #dbe7f7; color: #17406e; }
+  .empty-note { font-size: 0.85rem; color: #666; padding: 10px 0; }
+  .notification-banner { display: none; background: #d4edda; border: 1px solid #a7d7b3; color: #1e5c2a; border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+  .notification-banner.show { display: block; }
+  .notification-banner .title { font-weight: 700; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<h1>Apply for Birth Registration <span class="badge sim">Demo — Sri Lanka DPI Sandbox</span></h1>
+<p class="note">SLUDI login and OTP are simulated. Mother/Father NIC lookup uses the real sandbox DRP Identity Data Services API. Payment (courier fee) uses the real sandbox Payments API. Final Birth Registration submission is simulated because the catalog marks that API "conceptual" in this sandbox.</p>
+
+<div id="paymentNotification" class="notification-banner">
+  <div class="title">✓ Payment Notification</div>
+  <div id="paymentNotificationBody"></div>
+</div>
+
+<div id="login" class="panel active">
+  <h2>Step 1 — Login with SLUDI</h2>
+  <label>SLUDI (simulated — any value) <input id="sludi" placeholder="SLU100200300"></label>
+  <button id="sendOtpBtn" class="primary" onclick="requestOtp()">Send OTP</button>
+  <div id="loginError" class="error"></div>
+</div>
+
+<div id="otpPanel" class="panel">
+  <h2>Step 1b — Enter OTP</h2>
+  <p class="note">A one-time password has been "sent" to the mobile number linked to this SLUDI (simulated, shown below since there's no real SMS gateway in the sandbox).</p>
+  <div id="otpDisplay" class="otp-display"></div>
+  <label>Enter OTP <input id="otpInput" placeholder="123456"></label>
+  <button class="primary" onclick="verifyOtp()">Verify &amp; Continue</button>
+  <div id="otpError" class="error"></div>
+</div>
+
+<div id="myApplications" class="panel">
+  <h2>My Applications</h2>
+  <p class="note">Logged in <span class="badge real">✓ SLUDI verified (simulated)</span></p>
+  <div id="pendingAppsList"></div>
+  <button class="primary" onclick="startNewApplication()">+ Start New Application</button>
+</div>
+
+<div id="mainForm" class="panel">
+  <h2>Step 2 — Pre-Registration</h2>
+  <p class="note">Logged in <span class="badge real">✓ SLUDI verified (simulated)</span> · <a href="#" onclick="showMyApplications(); return false;">Back to My Applications</a></p>
+  <label>Mother's NIC <span class="note">try 736604450V, 845231907V, or 901245667V</span><input id="motherNic" placeholder="736604450V"></label>
+  <button class="secondary" onclick="retrieveNic('mother')">Retrieve Mother's Details</button>
+  <div id="motherCard"></div>
+
+  <label>Father's NIC (optional)<input id="fatherNic" placeholder="901245667V"></label>
+  <button class="secondary" onclick="retrieveNic('father')">Retrieve Father's Details</button>
+  <div id="fatherCard"></div>
+
+  <div id="preRegError" class="error"></div>
+  <button class="primary" onclick="preRegister()">Submit Pre-Registration</button>
+  <div id="refResult"></div>
+</div>
+
+<div id="finalizePanel" class="panel">
+  <h2>Step 3 — Finalize (after hospital confirms)</h2>
+  <label>Reference Number <input id="finalizeRef" placeholder="123456"></label>
+  <button class="secondary" onclick="loadCaseForFinalize()">Look up case</button>
+  <div id="finalizeCaseInfo"></div>
+  <div id="finalizeForm" style="display:none; margin-top:12px;">
+    <label>Child's First Name <input id="childFirst"></label>
+    <label>Child's Middle Name <input id="childMiddle"></label>
+    <label>Child's Surname <input id="childSurname"></label>
+    <label><input type="checkbox" id="courier" style="width:auto; display:inline;"> Request courier delivery of certificate (Rs. 500 <span class="badge real">Real Payments API</span>)</label>
+    <button class="primary" onclick="finalizeCase()">Submit Birth Registration</button>
+  </div>
+  <div id="finalizeResult"></div>
+</div>
+
+<script>
+let BACKEND = '';
+let sludiValue = '';
+let motherData = null;
+let fatherData = null;
+
+async function loadConfig() {
+  const res = await fetch('/api/config');
+  const data = await res.json();
+  BACKEND = data.backendUrl;
+}
+
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function requestOtp() {
+  document.getElementById('loginError').textContent = '';
+  sludiValue = document.getElementById('sludi').value;
+  const btn = document.getElementById('sendOtpBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${BACKEND}/api/otp/request`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ sludi: sludiValue }) });
+    const data = await res.json();
+    if (!res.ok || !data.sent) {
+      document.getElementById('loginError').textContent = data.error || 'Could not send OTP.';
+      return;
+    }
+    showPanel('otpPanel');
+    const otpDisplay = document.getElementById('otpDisplay');
+    otpDisplay.textContent = 'Sending OTP…';
+    await sleep(1500 + Math.random() * 1000);
+    otpDisplay.textContent = data.otp;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function verifyOtp() {
+  document.getElementById('otpError').textContent = '';
+  const otp = document.getElementById('otpInput').value;
+  const res = await fetch(`${BACKEND}/api/otp/verify`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ otp }) });
+  const data = await res.json();
+  if (!data.valid) {
+    document.getElementById('otpError').textContent = 'Incorrect OTP. Please try again.';
+    return;
+  }
+  showMyApplications();
+}
+
+async function showMyApplications() {
+  showPanel('myApplications');
+  await loadPendingApplications();
+}
+
+async function loadPendingApplications() {
+  const listEl = document.getElementById('pendingAppsList');
+  listEl.innerHTML = 'Loading…';
+  const res = await fetch(`${BACKEND}/api/cases/pending/${encodeURIComponent(sludiValue)}`);
+  const cases = await res.json();
+  if (!Array.isArray(cases) || cases.length === 0) {
+    listEl.innerHTML = '<div class="empty-note">No pending applications yet. Start a new one below.</div>';
+    return;
+  }
+  listEl.innerHTML = `<ul class="app-list">${cases.map(c => `
+    <li onclick="resumeApplication('${c.reference}')">
+      <span>Reference <span class="ref">${c.reference}</span> — ${c.mother?.fullNameEnglish || 'Mother NIC on file'}</span>
+      <span class="status-pill">${c.status}</span>
+    </li>
+  `).join('')}</ul>`;
+}
+
+function startNewApplication() {
+  document.getElementById('motherNic').value = '';
+  document.getElementById('fatherNic').value = '';
+  document.getElementById('motherCard').innerHTML = '';
+  document.getElementById('fatherCard').innerHTML = '';
+  document.getElementById('refResult').innerHTML = '';
+  document.getElementById('preRegError').textContent = '';
+  showPanel('mainForm');
+}
+
+function resumeApplication(reference) {
+  document.getElementById('finalizeRef').value = reference;
+  showPanel('finalizePanel');
+  loadCaseForFinalize();
+}
+
+async function retrieveNic(role) {
+  const nic = document.getElementById(role === 'mother' ? 'motherNic' : 'fatherNic').value.trim();
+  const cardEl = document.getElementById(role === 'mother' ? 'motherCard' : 'fatherCard');
+  cardEl.innerHTML = 'Looking up...';
+  const res = await fetch(`${BACKEND}/api/nic/${nic}`);
+  if (!res.ok) {
+    cardEl.innerHTML = '<div class="error">NIC not found in sandbox records.</div>';
+    if (role === 'mother') motherData = null; else fatherData = null;
+    return;
+  }
+  const data = await res.json();
+  if (role === 'mother') motherData = data.data; else fatherData = data.data;
+  cardEl.innerHTML = `<div class="person-card"><b>${data.data.fullNameEnglish}</b><br>DOB: ${data.data.dateOfBirth} · ${data.data.gender}<br>${data.data.addressLine1English} ${data.data.addressLine2English}</div>`;
+}
+
+async function preRegister() {
+  document.getElementById('preRegError').textContent = '';
+  document.getElementById('refResult').innerHTML = '';
+  const motherNic = document.getElementById('motherNic').value.trim();
+  const fatherNic = document.getElementById('fatherNic').value.trim();
+  const res = await fetch(`${BACKEND}/api/pre-register`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ sludi: sludiValue, motherNic, fatherNic: fatherNic || undefined })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    document.getElementById('preRegError').textContent = data.error;
+    return;
+  }
+  document.getElementById('refResult').innerHTML = `
+    <div class="ref-box">Reference: ${data.reference}</div>
+    <p class="note">Give this reference number to the hospital to add clinical birth details, then come back and use Step 3 to finalize.</p>
+  `;
+}
+
+async function loadCaseForFinalize() {
+  const ref = document.getElementById('finalizeRef').value.trim();
+  const infoEl = document.getElementById('finalizeCaseInfo');
+  const formEl = document.getElementById('finalizeForm');
+  infoEl.innerHTML = ''; formEl.style.display = 'none';
+  const res = await fetch(`${BACKEND}/api/case/${ref}`);
+  if (!res.ok) { infoEl.innerHTML = '<div class="error">Case not found.</div>'; return; }
+  const data = await res.json();
+  infoEl.innerHTML = `<div class="status-trail">Status: <b>${data.status}</b>${data.status === 'PRE_REGISTERED' ? ' — waiting for hospital to add clinical details.' : ''}</div>`;
+  if (data.status !== 'PRE_REGISTERED') { formEl.style.display = 'block'; }
+}
+
+async function finalizeCase() {
+  const ref = document.getElementById('finalizeRef').value.trim();
+  const body = {
+    childName: {
+      first: document.getElementById('childFirst').value,
+      middle: document.getElementById('childMiddle').value,
+      surname: document.getElementById('childSurname').value
+    },
+    courierRequested: document.getElementById('courier').checked
+  };
+  const res = await fetch(`${BACKEND}/api/case/${ref}/finalize`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const data = await res.json();
+  const resultEl = document.getElementById('finalizeResult');
+  if (!res.ok) { resultEl.innerHTML = `<div class="error">${data.error}</div>`; return; }
+  let paymentHtml = '';
+  if (data.payment) {
+    paymentHtml = data.payment.simulated
+      ? `<p class="note">Payment: simulated (txn ${data.payment.transactionId}). ${data.payment.note || ''}</p>`
+      : `<p class="note">Payment: <span class="badge real">Real</span> txn ${data.payment.transactionId}</p>`;
+    showPaymentNotification(data.payment, ref);
+  }
+  resultEl.innerHTML = `
+    <div class="status-trail">
+      Status: <b>${data.status}</b> <span class="badge sim">Simulated registration</span><br>
+      RGD Registration Number: <b>${data.registration.rgdRegistrationNumber}</b><br>
+      ${paymentHtml}
+    </div>
+  `;
+}
+
+function showPaymentNotification(payment, reference) {
+  const banner = document.getElementById('paymentNotification');
+  const body = document.getElementById('paymentNotificationBody');
+  body.innerHTML = payment.simulated
+    ? `Rs. 500.00 courier fee — simulated payment confirmed for application ${reference}. Transaction ${payment.transactionId}.`
+    : `Rs. 500.00 courier fee received for application ${reference}. Transaction <b>${payment.transactionId}</b> <span class="badge real">Real Payments API</span>.`;
+  banner.classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => banner.classList.remove('show'), 8000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadConfig();
+  document.querySelectorAll('a[data-panel]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); showPanel(a.dataset.panel); }));
+});
+</script>
+
+<p class="note" style="margin-top:24px;">Already pre-registered and the hospital has confirmed? <a href="#" data-panel="finalizePanel" onclick="showPanel('finalizePanel'); return false;">Jump to Step 3 — Finalize</a></p>
+</body>
+</html>

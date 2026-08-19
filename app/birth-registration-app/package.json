@@ -1,7 +1,7 @@
 {
   "name": "smart-citizen-birth-registration-app",
   "version": "1.0.0",
-  "description": "Birth Registration Platform demo for Smart Citizen (SLUDI + NIC mocked, Payments real, Birth Registration mocked)",
+  "description": "Birth Registration Platform demo for Smart Citizen — Hospital Desk + shared backend API (SLUDI/OTP mocked, NIC lookup real, Payments real, Birth Registration mocked)",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
@@ -9,8 +9,9 @@
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "cors": "^2.8.6",
     "dotenv": "^16.4.5",
+    "express": "^4.19.2",
     "node-fetch": "^2.7.0"
   }
 }

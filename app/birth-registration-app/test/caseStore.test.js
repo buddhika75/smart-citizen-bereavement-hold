@@ -66,6 +66,18 @@ test('listCases returns all created cases', () => {
   assert.equal(store.listCases().length, 2);
 });
 
+test('listPendingCasesBySludi returns only that SLUDI\'s non-registered cases', () => {
+  const store = createCaseStore();
+  const mine1 = store.createCase({ sludi: 'SLU1', mother: { fullName: 'A' } });
+  store.createCase({ sludi: 'SLU2', mother: { fullName: 'B' } });
+  const mineRegistered = store.createCase({ sludi: 'SLU1', mother: { fullName: 'C' } });
+  store.markRegistered(mineRegistered.reference, { notificationId: 'BN-1', rgdRegistrationNumber: 'RGD-1' });
+
+  const pending = store.listPendingCasesBySludi('SLU1');
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0].reference, mine1.reference);
+});
+
 test('markRegistered stores registration result and advances status', () => {
   const store = createCaseStore();
   const created = store.createCase({ sludi: 'SLU1', mother: { fullName: 'A' } });

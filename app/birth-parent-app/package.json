@@ -1,0 +1,14 @@
+{
+  "name": "smart-citizen-birth-parent-app",
+  "version": "1.0.0",
+  "description": "Parent-facing app for the Birth Registration Platform demo (SLUDI -> OTP -> pre-registration/finalize form). Calls the birth-registration-app API for all data.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5"
+  }
+}

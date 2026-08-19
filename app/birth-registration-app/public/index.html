@@ -2,16 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Birth Registration Platform — Smart Citizen</title>
+<title>Hospital Desk — Birth Registration Platform</title>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 24px; background: #f7f8fa; color: #1a1a2e; }
+  body { font-family: system-ui, sans-serif; max-width: 700px; margin: 0 auto; padding: 24px; background: #f7f8fa; color: #1a1a2e; }
   h1 { font-size: 1.4rem; }
   h2 { font-size: 1.1rem; margin-top: 0; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
-  .tab { padding: 8px 16px; border-radius: 6px; background: #e4e6eb; cursor: pointer; border: none; font-size: 0.95rem; }
-  .tab.active { background: #2b6cb0; color: white; }
-  .panel { display: none; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
-  .panel.active { display: block; }
+  .panel { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
   label { display: block; margin-top: 10px; font-size: 0.85rem; color: #444; }
   input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; margin-top: 4px; box-sizing: border-box; }
   button.primary { margin-top: 16px; background: #2b6cb0; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
@@ -20,46 +16,25 @@
   .badge.sim { background: #fff3cd; color: #7a5b00; }
   .badge.real { background: #d4edda; color: #1e5c2a; }
   .status-trail { margin-top: 16px; padding: 12px; background: #f0f4f8; border-radius: 8px; font-size: 0.9rem; }
-  .ref-box { font-size: 1.4rem; font-weight: bold; color: #2b6cb0; padding: 10px; background: #ebf3fc; border-radius: 8px; text-align: center; margin: 12px 0; }
   .error { color: #c0392b; font-size: 0.85rem; margin-top: 8px; }
   .note { font-size: 0.8rem; color: #666; margin-top: 4px; }
-  .hint { font-size: 0.75rem; color: #888; }
+  .parent-details { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .parent-card { flex: 1; min-width: 220px; background: #ebf3fc; border: 1px solid #cfe0f3; border-radius: 8px; padding: 12px 14px; }
+  .parent-card h3 { margin: 0 0 6px 0; font-size: 0.95rem; color: #17406e; }
+  .parent-card .name { font-size: 1.05rem; font-weight: 700; color: #14213d; }
+  .parent-card .field { font-size: 0.85rem; color: #333; margin-top: 2px; }
+  .parent-card .field b { color: #555; font-weight: 600; }
+  .id-readout { background: #f0f4f8; border-radius: 6px; padding: 8px 10px; margin-top: 4px; font-weight: 600; color: #17406e; }
+  .row-2 { display: flex; gap: 12px; }
+  .row-2 > label { flex: 1; }
 </style>
 </head>
 <body>
-<h1>Birth Registration Platform <span class="badge sim">Demo — Sri Lanka DPI Sandbox</span></h1>
-<p class="note">SLUDI login and NIC lookup are simulated (pre-seeded demo records). Payment uses the real sandbox Payments API. Birth Registration submission is simulated because the catalog marks it "conceptual" in this sandbox.</p>
+<h1>Hospital Desk <span class="badge sim">Demo — Sri Lanka DPI Sandbox</span></h1>
+<p class="note">Enter the reference number the parent received from the Apply app to add this baby's clinical birth details.</p>
 
-<div class="tabs">
-  <button class="tab active" data-panel="apply">Apply (Parent)</button>
-  <button class="tab" data-panel="hospital">Hospital Desk</button>
-</div>
-
-<div id="apply" class="panel active">
-  <h2>Step 1 — Pre-Registration</h2>
-  <label>SLUDI (simulated — any value) <input id="sludi" placeholder="SLU100200300"></label>
-  <label>Mother's NIC <span class="hint">try 736604450V</span><input id="motherNic" placeholder="736604450V"></label>
-  <label>Father's NIC (optional) <span class="hint">try 882345671V</span><input id="fatherNic" placeholder="882345671V"></label>
-  <button class="primary" onclick="preRegister()">Submit Pre-Registration</button>
-  <div id="preRegError" class="error"></div>
-  <div id="refResult"></div>
-
-  <h2 style="margin-top:28px;">Step 2 — Finalize (after hospital confirms)</h2>
-  <label>Reference Number <input id="finalizeRef" placeholder="123456"></label>
-  <button onclick="loadCaseForFinalize()">Look up case</button>
-  <div id="finalizeCaseInfo"></div>
-  <div id="finalizeForm" style="display:none; margin-top:12px;">
-    <label>Child's First Name <input id="childFirst"></label>
-    <label>Child's Middle Name <input id="childMiddle"></label>
-    <label>Child's Surname <input id="childSurname"></label>
-    <label><input type="checkbox" id="courier" style="width:auto; display:inline;"> Request courier delivery of certificate (Rs. 500 <span class="badge real">Real Payments API</span>)</label>
-    <button class="primary" onclick="finalizeCase()">Submit Birth Registration</button>
-  </div>
-  <div id="finalizeResult"></div>
-</div>
-
-<div id="hospital" class="panel">
-  <h2>Hospital Desk — Add Clinical Details</h2>
+<div class="panel">
+  <h2>Add Clinical Details</h2>
   <label>Reference Number <input id="hospitalRef" placeholder="123456"></label>
   <button onclick="loadCaseForHospital()">Look up case</button>
   <div id="hospitalCaseInfo"></div>
@@ -68,9 +43,20 @@
     <label>Gender
       <select id="gender"><option>Female</option><option>Male</option></select>
     </label>
-    <label>Birth Date <input id="birthDate" type="date"></label>
-    <label>Hospital ID <input id="hospitalId" placeholder="CWH"></label>
-    <label>Hospital Name <input id="hospitalName" placeholder="Castle Street Hospital for Women"></label>
+    <div class="row-2">
+      <label>Birth Date <input id="birthDate" type="date"></label>
+      <label>Birth Time <input id="birthTime" type="time"></label>
+    </div>
+    <label>Hospital
+      <select id="hospitalSelect" onchange="onHospitalChange()">
+        <option value="">Select a hospital…</option>
+        <option value="CWH" data-name="Castle Street Hospital for Women">Castle Street Hospital for Women (CWH)</option>
+        <option value="LRH" data-name="Lady Ridgeway Hospital for Children">Lady Ridgeway Hospital for Children (LRH)</option>
+        <option value="TH-KDY" data-name="Teaching Hospital Kandy">Teaching Hospital Kandy (TH-KDY)</option>
+        <option value="TH-GAL" data-name="Teaching Hospital Karapitiya, Galle">Teaching Hospital Karapitiya, Galle (TH-GAL)</option>
+      </select>
+    </label>
+    <label>Hospital ID <div id="hospitalIdReadout" class="id-readout">—</div></label>
     <label>Ward Number <input id="wardNumber" placeholder="W-05"></label>
     <label>Physician Name <input id="physicianName" placeholder="Dr. Fernando"></label>
     <button class="primary" onclick="submitHospitalDetails()">Save Clinical Details</button>
@@ -79,33 +65,25 @@
 </div>
 
 <script>
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById(tab.dataset.panel).classList.add('active');
-  });
-});
-
-async function preRegister() {
-  document.getElementById('preRegError').textContent = '';
-  document.getElementById('refResult').innerHTML = '';
-  const body = {
-    sludi: document.getElementById('sludi').value,
-    motherNic: document.getElementById('motherNic').value,
-    fatherNic: document.getElementById('fatherNic').value
-  };
-  const res = await fetch('/api/pre-register', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  const data = await res.json();
-  if (!res.ok) {
-    document.getElementById('preRegError').textContent = data.error;
-    return;
+function personCard(title, person) {
+  if (!person) {
+    return `<div class="parent-card"><h3>${title}</h3><div class="field">— not provided —</div></div>`;
   }
-  document.getElementById('refResult').innerHTML = `
-    <div class="ref-box">Reference: ${data.reference}</div>
-    <p class="note">Give this reference number to the hospital to add clinical birth details, then return here to finalize.</p>
+  return `
+    <div class="parent-card">
+      <h3>${title}</h3>
+      <div class="name">${person.fullNameEnglish || '—'}</div>
+      <div class="field"><b>NIC:</b> ${person.idCardNumber || '—'}</div>
+      <div class="field"><b>DOB:</b> ${person.dateOfBirth || '—'} &nbsp; <b>Gender:</b> ${person.gender || '—'}</div>
+      <div class="field"><b>Address:</b> ${person.addressLine1English || ''} ${person.addressLine2English || ''} ${person.addressLine3English || ''}</div>
+    </div>
   `;
+}
+
+function onHospitalChange() {
+  const select = document.getElementById('hospitalSelect');
+  const option = select.options[select.selectedIndex];
+  document.getElementById('hospitalIdReadout').textContent = select.value || '—';
 }
 
 async function loadCaseForHospital() {
@@ -116,18 +94,28 @@ async function loadCaseForHospital() {
   const res = await fetch(`/api/case/${ref}`);
   if (!res.ok) { infoEl.innerHTML = '<div class="error">Case not found.</div>'; return; }
   const data = await res.json();
-  infoEl.innerHTML = `<div class="status-trail">Status: <b>${data.status}</b> — Mother: ${data.mother?.fullNameEnglish || '—'}</div>`;
+  infoEl.innerHTML = `
+    <div class="status-trail">Status: <b>${data.status}</b></div>
+    <div class="parent-details">
+      ${personCard("Mother's Details", data.mother)}
+      ${personCard("Father's Details", data.father)}
+    </div>
+  `;
   formEl.style.display = 'block';
 }
 
 async function submitHospitalDetails() {
   const ref = document.getElementById('hospitalRef').value.trim();
+  const hospitalSelect = document.getElementById('hospitalSelect');
+  const hospitalId = hospitalSelect.value;
+  const hospitalName = hospitalSelect.options[hospitalSelect.selectedIndex]?.dataset.name || '';
   const body = {
     birthWeightKg: parseFloat(document.getElementById('birthWeight').value),
     gender: document.getElementById('gender').value,
     birthDate: document.getElementById('birthDate').value,
-    hospitalId: document.getElementById('hospitalId').value,
-    hospitalName: document.getElementById('hospitalName').value,
+    birthTime: document.getElementById('birthTime').value,
+    hospitalId,
+    hospitalName,
     wardNumber: document.getElementById('wardNumber').value,
     physicianName: document.getElementById('physicianName').value
   };
@@ -135,48 +123,7 @@ async function submitHospitalDetails() {
   const data = await res.json();
   const resultEl = document.getElementById('hospitalResult');
   if (!res.ok) { resultEl.innerHTML = `<div class="error">${data.error}</div>`; return; }
-  resultEl.innerHTML = `<div class="status-trail">Saved. Status: <b>${data.status}</b>. Applicant can now finalize using reference ${ref}.</div>`;
-}
-
-async function loadCaseForFinalize() {
-  const ref = document.getElementById('finalizeRef').value.trim();
-  const infoEl = document.getElementById('finalizeCaseInfo');
-  const formEl = document.getElementById('finalizeForm');
-  infoEl.innerHTML = ''; formEl.style.display = 'none';
-  const res = await fetch(`/api/case/${ref}`);
-  if (!res.ok) { infoEl.innerHTML = '<div class="error">Case not found.</div>'; return; }
-  const data = await res.json();
-  infoEl.innerHTML = `<div class="status-trail">Status: <b>${data.status}</b>${data.status === 'PRE_REGISTERED' ? ' — waiting for hospital to add clinical details.' : ''}</div>`;
-  if (data.status !== 'PRE_REGISTERED') { formEl.style.display = 'block'; }
-}
-
-async function finalizeCase() {
-  const ref = document.getElementById('finalizeRef').value.trim();
-  const body = {
-    childName: {
-      first: document.getElementById('childFirst').value,
-      middle: document.getElementById('childMiddle').value,
-      surname: document.getElementById('childSurname').value
-    },
-    courierRequested: document.getElementById('courier').checked
-  };
-  const res = await fetch(`/api/case/${ref}/finalize`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  const data = await res.json();
-  const resultEl = document.getElementById('finalizeResult');
-  if (!res.ok) { resultEl.innerHTML = `<div class="error">${data.error}</div>`; return; }
-  let paymentHtml = '';
-  if (data.payment) {
-    paymentHtml = data.payment.simulated
-      ? `<p class="note">Payment: simulated (txn ${data.payment.transactionId}). ${data.payment.note || ''}</p>`
-      : `<p class="note">Payment: <span class="badge real">Real</span> txn ${data.payment.transactionId}</p>`;
-  }
-  resultEl.innerHTML = `
-    <div class="status-trail">
-      Status: <b>${data.status}</b> <span class="badge sim">Simulated registration</span><br>
-      RGD Registration Number: <b>${data.registration.rgdRegistrationNumber}</b><br>
-      ${paymentHtml}
-    </div>
-  `;
+  resultEl.innerHTML = `<div class="status-trail">Saved. Status: <b>${data.status}</b>. Parent can now finalize using reference ${ref}.</div>`;
 }
 </script>
 </body>
