@@ -38,8 +38,8 @@ Last updated: 2026-08-19
 ## Use case
 
 - Candidate use cases: see `use-cases.md`
-- **Selected: #1, Automated Bereavement Account Hold** (Civil Registration + Bank)
-- Full technical spec: `spec-case-1-bereavement-account-hold.md`
+- ~~Selected: #1, Automated Bereavement Account Hold~~ — **superseded 2026-08-19**: GovTech confirmed the Death Notification sandbox bug (see Build status) won't be fixed today. Full spec kept at `spec-case-1-bereavement-account-hold.md` for reference; app code stays in the repo.
+- **Now building: #2, Birth Registration Platform** (Health Ministry + Civil Registration + Bank), per the team's own prepared doc `Birth Registration Platform.docx.md`. Full technical spec: `spec-case-2-birth-registration-platform.md`
 
 ## Build plan
 
@@ -55,8 +55,14 @@ Last updated: 2026-08-19
 ## Build status
 
 - Two working local apps built and tested against the real sandbox: `app/bank-api/` (Mock Bank API + dashboard) and `app/civil-registration-app/` (death entry form). Both have passing unit tests (TDD).
-- **Blocked on a sandbox bug**, not our code: Death Notification Services can't see records created via Death Registration Services (separate/disconnected datasets in staging). Registration + confirmation work end-to-end with real certificate numbers; the `BANK` broadcast step 404s on any freshly-created record.
-- Full findings and evidence: `build-status-and-sandbox-issue.md`. Flagging to the sandbox team at the event per plan — holding further workaround work until then.
+- **Blocked on a sandbox bug**, not our code: Death Notification Services can't see records created via Death Registration Services (separate/disconnected datasets in staging). Registration + confirmation work end-to-end with real certificate numbers; the `BANK` broadcast step 404s on any freshly-created record. GovTech confirmed 2026-08-19 this won't be fixed today — use case #1 is on hold, team is pivoting to use case #2.
+- Full findings and evidence: `build-status-and-sandbox-issue.md`.
+- **New: `app/birth-registration-app/`** (port 5001) for use case #2, Birth Registration Platform. Checked all 4 APIs the team's source doc referenced against the live catalog first:
+  - SLUDI (#68): real, but full OIDC flow — too heavy for the time left, so it's **mocked** (any non-empty value accepted).
+  - DRP Identity Data Services / NIC lookup (#16): real, but needs an org-token → agreement → subscription chain, and the sandbox's own sample shows an empty agreements list — **mocked** with 2 pre-seeded demo NICs, same response field names as the real API.
+  - Payments (#39): real, and now proven end-to-end — fixed the base URL (`https://gateway.stg.devportal.gov.lk/payments/v1.0.0`, not the catalog doc's `sgateway` host) and pulled a real `merchant_id` via the Playground's `GET /playground-action/merchants` action. A live courier-fee (Rs. 500) payment now returns a real transaction ID and checkout URL.
+  - Birth Registration (#3): catalog explicitly labels it **"Conceptual API specification... All endpoints are conceptual"** — not a live backend. **Mocked**, matching the docs' own request/response shape, with a visible "Simulated" badge in the UI so this is never presented as real.
+  - Full flow (pre-register → hospital clinical entry → finalize with real payment → simulated registration) verified end-to-end via curl and the browser UI. 12/12 unit tests passing (TDD). Spec: `spec-case-2-birth-registration-platform.md`.
 
 ## Change log
 
@@ -64,3 +70,4 @@ Last updated: 2026-08-19
 - 2026-08-19 — Use case #1 selected. Pulled live OpenAPI specs for Death Registration Services, Death Notification Services, and Payments. Found Death Notification Services already broadcasts to `BANK` as a built-in recipient — replaced the earlier polling idea with this real flow. Full spec written to `spec-case-1-bereavement-account-hold.md`.
 - 2026-08-19 — Added a real Civil Registration App (death entry form with name, NIC, address, etc.) to the spec, replacing the earlier trigger-script approach. Only fields the real Death Registration Services API accepts are transmitted; NIC/address are local-display-only.
 - 2026-08-19 — Built and tested `app/bank-api/` and `app/civil-registration-app/` locally against the real sandbox (registered a portal application, resolved auth-header and IP-whitelist issues). Found and documented a sandbox data-isolation bug between Death Registration and Death Notification Services — see `build-status-and-sandbox-issue.md`. Decision: hold, flag to sandbox team at the event, don't build further workarounds yet.
+- 2026-08-19 — GovTech confirmed the Death Notification sandbox bug won't be fixed today. Team decided to pivot to use case #2, Birth Registration Platform, per the team's own prepared doc. Checked all 4 referenced APIs live first: Birth Registration itself (#3) is catalog-labeled "conceptual" (no live backend); NIC lookup (#16) needs an agreement/subscription chain that's likely empty for our org; SLUDI (#68) is a full OIDC flow, too heavy for remaining time. Built `app/birth-registration-app/` with SLUDI/NIC/Birth-Registration mocked (matching real response shapes, clearly labeled in the UI) and a real, working Payments API call for the courier fee. Spec: `spec-case-2-birth-registration-platform.md`. 12/12 unit tests passing, full flow verified end-to-end.
